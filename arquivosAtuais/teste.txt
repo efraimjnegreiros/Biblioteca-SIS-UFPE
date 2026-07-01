@@ -1,0 +1,227 @@
+<input type="text" name="a" class="finput ">
+
+<input type="text" data-ac="authorities" name="a" class="finput autocomplete autocomplete_authorities ac_input" autocomplete="off">
+
+<input type="text" data-ac="authorities" name="a" class="finput autocomplete autocomplete_authorities ac_input" autocomplete="off">
+
+<input type="text" name="a" class="finput ">
+<input type="text" name="b" class="finput ">
+
+<input type="text" name="a" class="finput ">
+<input type="text" name="b" class="finput ">
+
+<input type="text" name="c" class="finput ">
+
+<input type="text" data-ac="vocabulary" name="a" class="finput autocomplete autocomplete_vocabulary ac_input" autocomplete="off">
+<input type="text" data-ac="vocabulary" name="b" class="finput autocomplete autocomplete_vocabulary ac_input" autocomplete="off">
+at[e o <input type="text" data-ac="vocabulary" name="j" class="finput autocomplete autocomplete_vocabulary ac_input" autocomplete="off">
+caso haja assunto. Se j[a acabar, clica em 
+<a class="main_button center" onclick="CatalogingInput.saveRecord();">Salvar</a>
+
+retorne o codigo abaixo ajustado e completo
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from openpyxl import load_workbook
+import time
+
+# PLANILHA
+wb = load_workbook("planilha.xlsx")
+ws = wb["Sheet1"]
+
+# CHROME
+options = webdriver.ChromeOptions()
+driver = webdriver.Chrome(options=options)
+
+# Ajuste da janela para garantir que todos os elementos fiquem visíveis na tela
+driver.maximize_window()
+
+print("[INFO] Abrindo Biblivre...")
+driver.get("http://localhost/Biblivre5/")
+
+time.sleep(3)
+
+# ---------------------------------------------------------------------------
+# PASSO 1: ROTINA DE LOGIN
+# ---------------------------------------------------------------------------
+try:
+    print("[INFO] Realizando login...")
+    
+    # Preenche o Usuário
+    campo_usuario = driver.find_element(By.NAME, "username")
+    campo_usuario.clear()
+    campo_usuario.send_keys("admin")
+    
+    # Preenche a Senha
+    campo_senha = driver.find_element(By.NAME, "password")
+    campo_senha.clear()
+    campo_senha.send_keys("Bibsis2025#")
+    
+    # Clica no botão Entrar
+    botao_entrar = driver.find_element(By.XPATH, "//button[contains(@onclick, \"submitForm('login'\")]")
+    botao_entrar.click()
+    
+    time.sleep(3)
+    print("[INFO] Login realizado com sucesso!")
+except Exception as e:
+    print(f"[ERRO LOGIN] Não foi possível logar: {e}")
+    driver.save_screenshot("erro_login.png")
+    driver.quit()
+    exit()
+
+# ---------------------------------------------------------------------------
+# PASSO 2: NAVEGAÇÃO NO MENU (Catalogação -> Bibliográfica)
+# ---------------------------------------------------------------------------
+try:
+    print("[INFO] Navegando até o menu Catalogação Bibliográfica...")
+    
+    # Clica no menu principal "Catalogação"
+    menu_catalogacao = driver.find_element(By.CSS_SELECTOR, "li.menu_cataloging")
+    menu_catalogacao.click()
+    time.sleep(1)
+    
+    # Clica no submenu "Bibliográfica"
+    submenu_bibliografica = driver.find_element(By.XPATH, "//li[@data-action='cataloging_bibliographic']/a")
+    submenu_bibliografica.click()
+    
+    time.sleep(3)
+    print("[INFO] Página de Catalogação Bibliográfica carregada.")
+except Exception as e:
+    print(f"[ERRO NAVEGAÇÃO] Falha ao navegar nos menus: {e}")
+    driver.save_screenshot("erro_navegacao.png")
+    driver.quit()
+    exit()
+
+# ---------------------------------------------------------------------------
+# PASSO 3: LAÇO DE REPETIÇÃO DA PLANILHA
+# ---------------------------------------------------------------------------
+for linha in range(3, 5):
+
+    print("\n" + "=" * 60)
+    print(f"[LINHA {linha}] Iniciando processamento")
+
+    titulo = ws[f'B{linha}'].value or ""
+    subtitulo = ws[f'C{linha}'].value or ""
+    autor = ws[f'D{linha}'].value or ""
+    editora = ws[f'E{linha}'].value or ""
+    cidade = ws[f'F{linha}'].value or ""
+    ano = ws[f'G{linha}'].value or ""
+    assuntos = ws[f'I{linha}'].value or ""
+    cdd = ws[f'K{linha}'].value or ""
+
+    print(f"[LINHA {linha}] Título: {titulo}")
+
+    lista_assuntos = [
+        x.strip()
+        for x in str(assuntos).split(";")
+        if x.strip()
+    ]
+
+    primeiro_assunto = lista_assuntos[0] if lista_assuntos else ""
+    ultimo_assunto = lista_assuntos[-1] if lista_assuntos else ""
+
+    try:
+        print(f"[LINHA {linha}] Clicando em Novo Registro")
+
+        driver.find_element(By.ID, "new_record_button").click()
+        time.sleep(2)
+
+        driver.save_screenshot(f"linha_{linha}_01_novo_registro.png")
+
+        # Captura o elemento ativo inicial da ficha MARC
+        ativo = driver.switch_to.active_element
+
+        # --- PREENCHIMENTO ---
+        # Mantendo sua lógica original baseada em TABs, porém revisada com segurança:
+
+        print(f"[LINHA {linha}] Preenchendo CDD")
+        for _ in range(4):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(cdd))
+
+        print(f"[LINHA {linha}] Preenchendo Autor")
+        for _ in range(8):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(autor))
+
+        print(f"[LINHA {linha}] Preenchendo Título")
+        for _ in range(20):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(titulo))
+
+        print(f"[LINHA {linha}] Preenchendo Subtítulo")
+        ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(subtitulo))
+
+        print(f"[LINHA {linha}] Preenchendo Cidade")
+        for _ in range(13):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(cidade))
+
+        print(f"[LINHA {linha}] Preenchendo Editora")
+        for _ in range(2):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(editora))
+
+        print(f"[LINHA {linha}] Preenchendo Ano")
+        for _ in range(2):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(str(ano))
+
+        print(f"[LINHA {linha}] Preenchendo Primeiro Assunto")
+        for _ in range(7):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(primeiro_assunto)
+
+        print(f"[LINHA {linha}] Preenchendo Último Assunto")
+        for _ in range(9):
+            ativo.send_keys(Keys.TAB)
+        ativo.send_keys(ultimo_assunto)
+
+        driver.save_screenshot(f"linha_{linha}_02_preenchida.png")
+        time.sleep(1)
+
+        # --- SALVAMENTO ---
+        print(f"[LINHA {linha}] Clicando em Salvar")
+
+        driver.find_element(
+            By.XPATH,
+            "//a[contains(@onclick,'saveRecord')]"
+        ).click()
+
+        time.sleep(3)
+
+        driver.save_screenshot(f"linha_{linha}_03_salva.png")
+        print(f"[LINHA {linha}] Registro salvo")
+
+    except Exception as erro:
+        print(f"[ERRO LINHA {linha}] {erro}")
+        driver.save_screenshot(f"linha_{linha}_erro.png")
+        break
+
+print("\n[INFO] Processo finalizado")
+driver.quit()
+
+<input type="text" name="a" class="finput "> --> numero de classificacao 9coluna k)
+
+<div class="subfields"><div class="indicator"><div class="label">Forma de entrada</div><div class="value"><select name="ind1" class=""><option value="1">sobrenome simples ou composto</option><option value="0">prenome simples ou composto</option><option value="2">sobrenome composto (obsoleto)</option><option value="3">nome de família</option></select></div><div class="extra"><span class="marc_numbering">#1</span></div><div class="clear"></div></div><div class="subfield" data="100"><div class="label">Sobrenome e/ou prenome do autor</div><div class="value"><input type="text" data-ac="authorities" name="a" class="finput autocomplete autocomplete_authorities ac_input" autocomplete="off"></div><div class="extra"><span class="marc_numbering">$a</span></div><div class="clear"></div></div><div class="subfield" data="100"><div class="label">Numeração que segue o prenome</div><div class="value"><input type="text" name="b" class="finput"></div><div class="extra"><span class="marc_numbering">$b</span></div><div class="clear"></div></div><div class="subfield repeatable" data="100"><div class="label">Título e outras palavras associadas ao nome</div><div class="value"><input type="text" name="c" class="finput"></div><div class="extra"><span class="marc_numbering">$c</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div><div class="subfield" data="100"><div class="label">Datas associadas ao nome</div><div class="value"><input type="text" name="d" class="finput "></div><div class="extra"><span class="marc_numbering">$d</span></div><div class="clear"></div></div><div class="subfield" data="100"><div class="label">Forma completa do nome</div><div class="value"><input type="text" name="q" class="finput "></div><div class="extra"><span class="marc_numbering">$q</span></div><div class="clear"></div></div></div>
+<input type="text" data-ac="authorities" name="a" class="finput autocomplete autocomplete_authorities ac_input" autocomplete="off"> --> nome e sobrenome do autor coluna D da tabela
+
+<div class="subfields"><div class="indicator"><div class="label">Gera entrada secundária na ficha</div><div class="value"><select name="ind1" class=""><option value="1">Gera entrada para o título</option><option value="0">Não gera entrada para o título</option></select></div><div class="extra"><span class="marc_numbering">#1</span></div><div class="clear"></div></div><div class="indicator"><div class="label">Número de caracteres a serem desprezados na alfabetação</div><div class="value"><select name="ind2" class=""><option value="0">Nenhum caractere a desprezar</option><option value="1">1 caractere a desprezar</option><option value="2">2 caracteres a desprezar</option><option value="3">3 caracteres a desprezar</option><option value="4">4 caracteres a desprezar</option><option value="5">5 caracteres a desprezar</option><option value="6">6 caracteres a desprezar</option><option value="7">7 caracteres a desprezar</option><option value="8">8 caracteres a desprezar</option><option value="9">9 caracteres a desprezar</option></select></div><div class="extra"><span class="marc_numbering">#2</span></div><div class="clear"></div></div><div class="subfield" data="245"><div class="label">Título principal</div><div class="value"><input type="text" name="a" class="finput "></div><div class="extra"><span class="marc_numbering">$a</span></div><div class="clear"></div></div><div class="subfield" data="245"><div class="label">Títulos paralelos/subtítulos</div><div class="value"><input type="text" name="b" class="finput "></div><div class="extra"><span class="marc_numbering">$b</span></div><div class="clear"></div></div><div class="subfield repeatable" data="245"><div class="label">Indicação de responsabilidade da obra</div><div class="value"><input type="text" name="c" class="finput "></div><div class="extra"><span class="marc_numbering">$c</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div><div class="subfield" data="245"><div class="label">Meio</div><div class="value"><input type="text" name="h" class="finput "></div><div class="extra"><span class="marc_numbering">$h</span></div><div class="clear"></div></div><div class="subfield repeatable" data="245"><div class="label">Número da parte - seção da obra</div><div class="value"><input type="text" name="n" class="finput "></div><div class="extra"><span class="marc_numbering">$n</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div><div class="subfield repeatable" data="245"><div class="label">Nome da parte - seção da obra</div><div class="value"><input type="text" name="p" class="finput "></div><div class="extra"><span class="marc_numbering">$p</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div></div>
+<input type="text" name="a" class="finput "> --> t[itulo principal coluna B da tabela
+
+<input type="text" name="b" class="finput "> --> titulos paralelos ou subtitulos coluna C da tabela
+
+<div class="subfields"><div class="subfield" data="250"><div class="label">Indicação da edição</div><div class="value"><input type="text" name="a" class="finput "></div><div class="extra"><span class="marc_numbering">$a</span></div><div class="clear"></div></div><div class="subfield" data="250"><div class="label">Informações adicionais</div><div class="value"><input type="text" name="b" class="finput "></div><div class="extra"><span class="marc_numbering">$b</span></div><div class="clear"></div></div></div>
+<input type="text" name="a" class="finput "> --> numero da edicao coluna H da tabela
+
+
+<div class="subfields"><div class="subfield repeatable" data="260"><div class="label">Local de publicação, distribuição, etc.</div><div class="value"><input type="text" name="a" class="finput "></div><div class="extra"><span class="marc_numbering">$a</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div><div class="subfield repeatable" data="260"><div class="label">Nome do editor, publicador, etc.</div><div class="value"><input type="text" name="b" class="finput "></div><div class="extra"><span class="marc_numbering">$b</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div><div class="subfield repeatable" data="260"><div class="label">Data de publicação, distribuição, etc.</div><div class="value"><input type="text" name="c" class="finput "></div><div class="extra"><span class="marc_numbering">$c</span><a href="javascript:void(0);" class="marc_repeat">[ Repetir ]</a></div><div class="clear"></div></div><div class="subfield" data="260"><div class="label">Nome do impressor</div><div class="value"><input type="text" name="e" class="finput "></div><div class="extra"><span class="marc_numbering">$e</span></div><div class="clear"></div></div><div class="subfield" data="260"><div class="label">Informações adicionais</div><div class="value"><input type="text" name="f" class="finput "></div><div class="extra"><span class="marc_numbering">$f</span></div><div class="clear"></div></div><div class="subfield" data="260"><div class="label">Data de impressão</div><div class="value"><input type="text" name="g" class="finput "></div><div class="extra"><span class="marc_numbering">$g</span></div><div class="clear"></div></div></div>
+<input type="text" name="a" class="finput "> --> local de publica;'ao coluna F da tabela
+
+<input type="text" name="b" class="finput "> --> nome da editora coluna E da tabela
+
+<input type="text" name="c" class="finput "> --> ano de publica;'ao coluna G da tabela
+
+<input type="text" data-ac="vocabulary" name="a" class="finput autocomplete autocomplete_vocabulary ac_input" autocomplete="off"> --> assuntos, como j[a ta coluna I da tabela
